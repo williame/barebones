@@ -102,6 +102,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	for(uint32_t f=0; f<frame_count; f++) {
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[f]);
 		glBufferData(GL_ARRAY_BUFFER,vertex_count*6*sizeof(GLfloat),vn_data+f*vertex_count*6,GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER,0);
 		glCheck();
 	}
 	const size_t texture_size = textures?tex_frame_count*vertex_count*2:0;
@@ -119,13 +120,14 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	for(uint32_t f=0; f<tex_frame_count; f++) {
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[f]);
 		glBufferData(GL_ARRAY_BUFFER,vertex_count*2*sizeof(GLfloat),t_data+f*vertex_count*2,GL_STATIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER,0);
 		glCheck();
 	}
 	i_data = new GLushort[index_count];
 	for(uint32_t i=0; i<index_count; i++) {
 		i_data[i] = in.uint32();
 		if(i_data[i] >= vertex_count)
-		data_error("index[" << i << "]=" << i_data[i] << " out of bounds (" << vertex_count << ')');
+			data_error("index[" << i << "]=" << i_data[i] << " out of bounds (" << vertex_count << ')');
 	}
 	glGenBuffers(1,&i_vbo);
 	glCheck();
@@ -225,7 +227,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		glDisableVertexAttribArray(attrib_tex);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
 	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
-	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,0);
+	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,(void*)(0));
 	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
 	std::cerr << "drew " << g3d.filename << ':' << name << std::endl;
