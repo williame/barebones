@@ -61,8 +61,13 @@ namespace {
 				fseek(file,0,SEEK_END);
 				bytes.resize(ftell(file));
 				fseek(file,0,SEEK_SET);
-				if(bytes.size() == fread(&bytes.at(0),1,bytes.size(),file))
-					ok = true;
+				size_t ofs = 0;
+				while(ofs < bytes.size()) {
+					const size_t read = fread(&bytes.at(ofs),1,bytes.size()-ofs,file);
+					if(read <= 0) break;
+					ofs += read;
+				}
+				ok = (ofs == bytes.size());
 				fclose(file);
 			}
 			fire();
