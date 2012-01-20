@@ -8,6 +8,7 @@ public:
 	virtual ~mesh_t();
 	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour);
 	g3d_t& g3d;
+	std::string name;
 	uint32_t frame_count, vertex_count, index_count, textures, tex_frame_count;
 	GLfloat* vn_data;
 	GLfloat* t_data;
@@ -68,7 +69,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	g3d(g), vn_data(NULL), t_data(NULL), i_data(NULL), vn_vbo(NULL), t_vbo(NULL), i_vbo(0), texture(0),
 	min(FLT_MAX/2,FLT_MAX/2,FLT_MAX/2), max(-FLT_MAX/2,-FLT_MAX/2,-FLT_MAX/2) {
 	if(ver==4) {
-		const std::string name = in.fixed_str<64>();
+		name = in.fixed_str<64>();
 		frame_count = in.uint32(); if(!frame_count) data_error(g3d.filename << ':' << name << " has no frames");
 		vertex_count = in.uint32(); if(!vertex_count) data_error(g3d.filename << ':' << name << " has no vertices");
 		index_count = in.uint32(); if(!index_count) data_error(g3d.filename << ':' << name << " has no indices");
@@ -182,7 +183,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	glCheck();
 	glUniformMatrix3fv(uniform_normal_matrix,1,true,glm::value_ptr(glm::inverse(glm::mat3(modelview))));
 	if(GLint err = glGetError())
-		std::cerr << err << "error setting normal matrix " << uniform_normal_matrix << " to " << glm::value_ptr(glm::inverse(glm::mat3(modelview))) << std::endl;
+		std::cerr << err << ' ' << g3d.filename << ':' << name << " error setting normal matrix " << uniform_normal_matrix << " to " << glm::value_ptr(glm::inverse(glm::mat3(modelview))) << std::endl;
 	const size_t stride = 6*sizeof(GLfloat);
 	glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_0]);	
 	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
