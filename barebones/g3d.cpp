@@ -227,7 +227,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		glDisableVertexAttribArray(attrib_tex);
 	graphics_assert(i_vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << ',' << i_vbo << ',' << glIsBuffer(i_vbo) << ',' << index_count << std::endl;
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << ',' << i_vbo << ',' << !!glIsBuffer(i_vbo) << ',' << index_count << std::endl;
 	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,(void*)(0));
 	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
