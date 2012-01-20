@@ -78,7 +78,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 		textures = in.uint32();
 		for(int t=0; t<5; t++)
 			if((1<<t)&textures) {
-				const std::string& path = in.fixed_str<64>();
+				const std::string path = std::string(in.fixed_str<64>().c_str());
 				if(t==0) // diffuse?
 					g3d.main.load_texture(g3d.main.relpath(g3d.filename,path),this,LOAD_TEXTURE);
 			}
@@ -203,13 +203,13 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		const size_t frame_1 = (frame_0+1) % frame_count;
 		const float lerp = fmod(time,1);
 		glUniform1f(uniform_lerp,lerp);
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
+		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_1]);	
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
+		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_vertex_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
+		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_normal_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
+		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glCheck();
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
@@ -217,11 +217,11 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	if(textures && texture) {
 		const size_t tex_frame = (size_t)(std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count) % tex_frame_count;
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
+		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glEnableVertexAttribArray(attrib_tex);
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
+		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
+		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glCheck();
 	} else
 		glDisableVertexAttribArray(attrib_tex);
