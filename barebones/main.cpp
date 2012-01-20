@@ -493,6 +493,16 @@ static unsigned short map_nacl_key(uint32_t code) {
 	return code;
 }
 
+static main_t::mouse_button_t map_nacl_mouse_button(uint32_t button) {
+	switch(button) {
+	case PP_INPUTEVENT_MOUSEBUTTON_NONE: return main_t::MOUSE_LAST;
+	case PP_INPUTEVENT_MOUSEBUTTON_LEFT: return main_t::MOUSE_LEFT;
+	case PP_INPUTEVENT_MOUSEBUTTON_MIDDLE: return main_t::MOUSE_MIDDLE;
+	case PP_INPUTEVENT_MOUSEBUTTON_RIGHT: return main_t::MOUSE_RIGHT;
+	default: panic("unhandled mapping of mouse button " << button);
+	}
+}
+
 bool _platform_main_t::HandleInputEvent(const pp::InputEvent& nacl_event) {
 	switch(nacl_event.GetType()) {
 	case PP_INPUTEVENT_TYPE_KEYDOWN: {
@@ -507,6 +517,26 @@ bool _platform_main_t::HandleInputEvent(const pp::InputEvent& nacl_event) {
 			key_map[code] = false;
 		return main->on_key_up(code,key_map,mouse_map);
 	} break;
+	case PP_INPUTEVENT_TYPE_MOUSEMOVE:
+	case PP_INPUTEVENT_TYPE_MOUSEDOWN: {
+		// trivia: if a button is down, we get a repeat
+		const pp::MouseInputEvent mouse(nacl_event);
+		const main_t::mouse_button_t btn = map_nacl_mouse_button(mouse.GetButton());
+		if(btn < (int)mouse_map.size())
+			mouse_map[btn] = true;
+		else if(mouse_map.none())
+			return false;
+		return main->on_mouse_down(mouse.GetPosition().x(),mouse.GetPosition().y(),btn,key_map,mouse_map);
+	}
+	case PP_INPUTEVENT_TYPE_MOUSEUP: {
+		const pp::MouseInputEvent mouse(nacl_event);
+		const main_t::mouse_button_t btn = map_nacl_mouse_button(mouse.GetButton());
+		if(btn < (int)mouse_map.size()) {
+			mouse_map[btn] = false;
+			return main->on_mouse_up(mouse.GetPosition().x(),mouse.GetPosition().y(),btn,key_map,mouse_map);
+		}
+		return false;
+	}
 	default:
 		return false;
 	}

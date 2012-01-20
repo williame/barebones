@@ -141,5 +141,20 @@ protected:
 	throw data_error_t(buf.str()); \
 }
 
+class panic_t: public std::exception {
+public:
+	panic_t(const std::string& m): msg(m) {}
+	~panic_t() throw() {}
+	const char* what() const throw() { return msg.c_str(); }
+protected:
+	const std::string msg;	
+};
+
+#define panic(expr) { \
+	std::stringstream buf(std::ios_base::out|std::ios_base::ate); \
+	buf << __FILE__ << ':' << __LINE__ << " PANIC: " << expr; \
+	throw panic_t(buf.str()); \
+}
+
 
 #endif//__MAIN_HPP__
