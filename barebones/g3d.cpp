@@ -171,8 +171,7 @@ g3d_t::mesh_t::~mesh_t() {
 void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
 	if(!i_vbo) return; // initialisation failed?
 	time = std::min(std::max(time,0.0f),1.0f) * (float)frame_count;
-	const size_t frame_0 = time;
-	assert(frame_0 < frame_count);
+	const size_t frame_0 = (size_t)time % frame_count;
 	glUseProgram(program);
 	glCheck();
 	glUniform4fv(uniform_colour,1,glm::value_ptr(const_cast<glm::vec4&>(colour)));
@@ -187,7 +186,6 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	glCheck();
 	if(frame_count > 1) {
 		const size_t frame_1 = (frame_0+1) % frame_count;
-		assert(frame_1 < frame_count);
 		const float lerp = fmod(time,1);
 		glUniform1f(uniform_lerp,lerp);
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_1]);	
@@ -197,8 +195,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
 	if(textures && texture) {
-		const size_t tex_frame = std::max(0.0f,std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count);
-		assert(tex_frame < tex_frame_count);
+		const size_t tex_frame = (size_t)(std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count) % tex_frame_count;
 		glEnableVertexAttribArray(attrib_tex);
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
 		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
