@@ -70,10 +70,10 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	min(FLT_MAX/2,FLT_MAX/2,FLT_MAX/2), max(-FLT_MAX/2,-FLT_MAX/2,-FLT_MAX/2) {
 	if(ver==4) {
 		name = std::string(in.fixed_str<64>().c_str());
-		frame_count = in.uint32(); if(!frame_count) data_error(g3d.filename << ':' << name << " has no frames");
-		vertex_count = in.uint32(); if(!vertex_count) data_error(g3d.filename << ':' << name << " has no vertices");
-		index_count = in.uint32(); if(!index_count) data_error(g3d.filename << ':' << name << " has no indices");
-		if(index_count%3) data_error(g3d.filename << ':' << name << " bad number of indices: " << index_count);
+		frame_count = in.uint32(); if(!frame_count) data_error(name << " has no frames");
+		vertex_count = in.uint32(); if(!vertex_count) data_error(name << " has no vertices");
+		index_count = in.uint32(); if(!index_count) data_error(name << " has no indices");
+		if(index_count%3) data_error(name << " bad number of indices: " << index_count);
 		in.skip(9*4);
 		textures = in.uint32();
 		for(int t=0; t<5; t++)
@@ -131,6 +131,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	}
 	glGenBuffers(1,&i_vbo);
 	glCheck();
+	std::cerr << g3d.filename << ':' << name << " i_vbo=" << i_vbo << std::endl;
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,index_count*sizeof(GLushort),i_data,GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
