@@ -12,6 +12,10 @@
 
 #ifdef __native_client__
 	#include <GLES2/gl2.h>
+#elif defined(MINGW_X)
+	#define GLEW_STATIC
+	#include "../external/glew.h"
+	#include <GL/gl.h>
 #else
 	#define GLEW_STATIC
 	#include <GL/glew.h>

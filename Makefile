@@ -1,13 +1,16 @@
 # flags for various build platform targets
 
+MINGW_CFLAGS = -DMINGW_X -I/opt/SDL-1.2.13/include/SDL
+MINGW_LDFLAGS = -L/opt/SDL-1.2.13/lib -lSDL -lopengl32 -Lbin-lglew32
+
 ifeq ($(shell uname),windows32) # mingw
 	EXE_EXT =.exe
 	SDL_CFLAGS =-I/usr/include/SDL `sdl-config --cflags`
-	SDL_LDFLAGS =-L/usr/lib -static -lglew32s `sdl-config --static-libs` -lopengl32 -lglu32 
+	SDL_LDFLAGS =-L/usr/lib -static -lglew32s `sdl-config --static-libs` ${MINGW_LDFLAGS}
 else
 	EXE_EXT =
-	SDL_CFLAGS =`pkg-config --cflags sdl gl glew glu`
-	SDL_LDFLAGS =`pkg-config --libs sdl gl glew glu`
+	SDL_CFLAGS =`pkg-config --cflags sdl gl glew`
+	SDL_LDFLAGS =`pkg-config --libs sdl gl glew`
 endif
 
 NACL_PATH_32 = ${NACL_SDK_ROOT}/pepper_17/toolchain/linux_x86_newlib/bin/
@@ -33,11 +36,14 @@ OBJ_BASE_CPP = \
 	barebones/main.opp
 
 OBJ_SDL_CPP = $(OBJ_BASE_CPP:%.opp=%.sdl.opp)
-	
+
+OBJ_MINGW_X_32_CPP = $(OBJ_BASE_CPP:%.opp=%.mingw-32.opp)
+OBJ_MINGW_X_64_CPP = $(OBJ_BASE_CPP:%.opp=%.mingw-64.opp)
+
 OBJ_NACL_32_CPP = $(OBJ_BASE_CPP:%.opp=%.nacl.x86-32.opp)
 OBJ_NACL_64_CPP = $(OBJ_BASE_CPP:%.opp=%.nacl.x86-64.opp)
 
-OBJ_CPP = ${OBJ_SDL_CPP} ${OBJ_NACL_CPP}
+OBJ_CPP = ${OBJ_SDL_CPP} ${OBJ_NACL_32_CPP} ${OBJ_NACL_64_CPP} ${OBJ_MINGW_X_32_CPP} ${OBJ_MINGW_X_64_CPP} 
 
 # c object files
 
@@ -49,10 +55,13 @@ OBJ_BASE_C = \
 
 OBJ_SDL_C = $(OBJ_BASE_C:%.o=%.sdl.o)
 
+OBJ_MINGW_X_32_C = $(OBJ_BASE_C:%.o=%.mingw-32.o)
+OBJ_MINGW_X_64_C = $(OBJ_BASE_C:%.o=%.mingw-64.o)
+
 OBJ_NACL_32_C = $(OBJ_BASE_C:%.o=%.nacl.x86-32.o)
 OBJ_NACL_64_C = $(OBJ_BASE_C:%.o=%.nacl.x86-64.o)
 
-OBJ_C = ${OBJ_SDL_C} ${OBJ_NACL_C}
+OBJ_C = ${OBJ_SDL_C} ${OBJ_MINGW_X_32_C} ${OBJ_MINGW_X_64_C} ${OBJ_NACL_32_C} ${OBJ_NACL_64_C}
 
 OBJ = ${OBJ_CPP} ${OBJ_C}
 
@@ -61,7 +70,7 @@ OBJ = ${OBJ_CPP} ${OBJ_C}
 TARGET_BIN = game
 TARGET = bin/${TARGET_BIN}
 
-TARGETS = ${TARGET}.${EXE_EXT} ${TARGET}.x86-32.nexe ${TARGET}.x86-64.nexe
+TARGETS = ${TARGET}.${EXE_EXT} ${TARGET}.x86-32.nexe ${TARGET}.x86-64.nexe # ${TARGET}.mingw-32.exe ${TARGET}.mingw-64.exe
 
 .PHONY:	clean all check_env zip
 
@@ -75,7 +84,13 @@ ${TARGET}.x86-32.nexe: ${OBJ_NACL_32_CPP} ${OBJ_NACL_32_C}
 
 ${TARGET}.x86-64.nexe: ${OBJ_NACL_64_CPP} ${OBJ_NACL_64_C}
 	${NACL_PATH_64}x86_64-nacl-g++ ${CFLAGS} -o $@ -m64 $^ ${LDFLAGS} ${NACL_LDFLAGS}
-	
+
+${TARGET}.mingw-32.exe: ${OBJ_MINGW_X_32_CPP} ${OBJ_MINGW_X_32_C}
+	i686-w64-mingw32-g++ -m32 ${MINGW_CFLAGS} -o $@ -m32 $^ ${MINGW_LDFLAGS}
+
+${TARGET}.mingw-64.exe: ${OBJ_MINGW_X_64_CPP} ${OBJ_MINGW_X_64_C}
+	x86_64-w64-mingw32-g++ -m64 ${MINGW_CFLAGS} -o $@ -m32 $^ ${MINGW_LDFLAGS}
+
 run:	check_env ${TARGET}.${EXE_EXT}
 ifeq ($(shell uname),windows32)
 	rm -f bin/stderr.txt bin/stdout.txt
@@ -106,6 +121,12 @@ zip:
 %.nacl.x86-64.o:	%.c
 	${NACL_PATH_64}x86_64-nacl-gcc ${CFLAGS} -c $< -MD -MF $(<:%.c=%.nacl.x86-64.dep) -m64 -o $@
 
+%.mingw-32.o:	%.c
+	i686-w64-mingw32-g++ ${CFLAGS} ${MINGW_CFLAGS} -c $< -MD -MF $(<:%.c=%.mingw-32.dep) -m32 -o $@
+
+%.mingw-64.o:	%.c
+	x86_64-w64-mingw32-g++ ${CFLAGS} ${MINGW_CFLAGS} -c $< -MD -MF $(<:%.c=%.mingw-64.dep) -m32 -o $@
+
 # compile c++ files
 	
 %.sdl.opp:	%.cpp
@@ -116,6 +137,12 @@ zip:
 
 %.nacl.x86-64.opp:	%.cpp
 	${NACL_PATH_64}x86_64-nacl-g++ ${CFLAGS} -c $< -MD -MF $(<:%.cpp=%.nacl.x86-64.dep) -m64 -o $@
+
+%.mingw-32.opp:	%.cpp
+	i686-w64-mingw32-g++ ${CFLAGS} ${MINGW_CFLAGS} -c $< -MD -MF $(<:%.cpp=%.mingw-32.dep) -m32 -o $@
+
+%.mingw-64.opp:	%.cpp
+	x86_64-w64-mingw32-g++ ${CFLAGS} ${MINGW_CFLAGS} -c $< -MD -MF $(<:%.cpp=%.mingw-64.dep) -m32 -o $@
 
 #misc
 
