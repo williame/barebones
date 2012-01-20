@@ -197,7 +197,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
 	if(textures && texture) {
-		const size_t tex_frame = std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count;
+		const size_t tex_frame = std::max(0.0,std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count);
 		assert(tex_frame < tex_frame_count);
 		glEnableVertexAttribArray(attrib_tex);
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
