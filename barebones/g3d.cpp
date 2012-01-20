@@ -171,7 +171,7 @@ g3d_t::mesh_t::~mesh_t() {
 
 void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
 	if(!i_vbo || (textures && !texture)) {
-		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized (" i_vbo << ',' << textures << ',' << texture << ')' << std::endl;
+		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized (" << i_vbo << ',' << textures << ',' << texture << ')' << std::endl;
 		return;
 	}
 	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
