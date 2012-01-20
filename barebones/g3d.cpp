@@ -174,40 +174,59 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized" << std::endl;
 		return;
 	}
-	std::cerr << "drawing " << g3d.filename << ':' << name << std::endl;
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	time = std::min(std::max(time,0.0f),1.0f) * (float)frame_count;
 	const size_t frame_0 = (size_t)time % frame_count;
 	glUseProgram(program);
+	glCheck();
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniform4fv(uniform_colour,1,glm::value_ptr(const_cast<glm::vec4&>(colour)));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniform3fv(uniform_light_0,1,glm::value_ptr(const_cast<glm::vec3&>(light_0)));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniformMatrix4fv(uniform_mvp_matrix,1,false,glm::value_ptr(projection*modelview));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniformMatrix3fv(uniform_normal_matrix,1,false,glm::value_ptr(glm::inverse(glm::mat3(modelview))));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
 	const GLsizei stride = 6*sizeof(GLfloat);
 	glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_0]);	
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glVertexAttribPointer(attrib_normal_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
 	if(frame_count > 1) {
 		const size_t frame_1 = (frame_0+1) % frame_count;
 		const float lerp = fmod(time,1);
 		glUniform1f(uniform_lerp,lerp);
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_1]);	
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_vertex_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_normal_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glCheck();
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	if(textures && texture) {
 		const size_t tex_frame = (size_t)(std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count) % tex_frame_count;
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glEnableVertexAttribArray(attrib_tex);
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glCheck();
 	} else
 		glDisableVertexAttribArray(attrib_tex);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,0);
+	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
 	std::cerr << "drew " << g3d.filename << ':' << name << std::endl;
 }
