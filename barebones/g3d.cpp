@@ -175,8 +175,11 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	glUseProgram(program);
 	glCheck();
 	glUniform4fv(uniform_colour,1,glm::value_ptr(const_cast<glm::vec4&>(colour)));
+	glCheck();
 	glUniform3fv(uniform_light_0,1,glm::value_ptr(const_cast<glm::vec3&>(light_0)));
+	glCheck();
 	glUniformMatrix4fv(uniform_mvp_matrix,1,false,glm::value_ptr(projection*modelview));
+	glCheck();
 	glUniformMatrix3fv(uniform_normal_matrix,1,true,glm::value_ptr(glm::inverse(glm::mat3(modelview))));
 	glCheck();
 	const size_t stride = 6*sizeof(GLfloat);
