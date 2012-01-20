@@ -113,8 +113,8 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,index_vbo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,index_count*sizeof(GLushort),index_data,GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
-	if(1 == frame_count) {
 	glCheck();
+	if(1 == frame_count) {
 		program = g3d.main.get_shared_program("g3d_single_frame");
 		graphics_assert(program && "g3d_single_frame"); // provided by game adaptation
 	} else {

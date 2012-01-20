@@ -233,7 +233,6 @@ static void glsl_log(GLuint obj,const std::string& src) {
 			glIsShader(obj)?"shader":glIsProgram(obj)?"program":"invalid handle",
 			ok?"compiled with warnings":"failed to compile",
 			ret.c_str(),src.c_str());
-		fprintf(stderr,"source>\n%s\n",src.c_str());
 	if(!ok) {
 		if(!ret.size())
 			fprintf(stderr,"source>\n%s\n",src.c_str());
