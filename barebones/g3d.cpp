@@ -218,8 +218,9 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 
 void g3d_t::mesh_t::on_texture_loaded(const std::string& name,GLuint handle,intptr_t data) {
 	if(!handle || (data != LOAD_TEXTURE))
-		data_error(g3d.filename << " could not load " << name << ',' << data);
+		data_error(g3d.filename << ':' << this->name << " could not load " << name << ',' << data);
 	texture = handle;
+	std::cout << g3d.filename << ':' << this->name << " loaded " << name << ',' << handle << std::endl; 
 }
 
 void g3d_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
