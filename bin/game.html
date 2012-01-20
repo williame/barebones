@@ -1,0 +1,84 @@
+<html>
+	<head>
+		<title>TITLE</title>
+		<link rel="shortcut icon" href="favicon.ico"/>
+		<script type="text/javascript" src="check_browser.js"></script>
+		<script type="text/javascript">
+			// Check for Native Client support in the browser before the DOM loads
+			var isValidBrowser = false;
+			var browserSupportStatus = 0;
+			var minimumChromeVersion = 17;
+			var checker = new browser_version.BrowserChecker(minimumChromeVersion,navigator["appVersion"],navigator["plugins"]);
+			checker.checkBrowser();
+			isValidBrowser = checker.getIsValidBrowser();
+			browserSupportStatus = checker.getBrowserSupportStatus();
+			// this function called to show errors if not chrome
+			function check_browser() {
+				var err = document.getElementById('game_err_msg');
+				switch (browserSupportStatus) {
+				case browser_version.BrowserChecker.StatusValues.NACL_ENABLED:
+					return true;
+				case browser_version.BrowserChecker.StatusValues.UNKNOWN_BROWSER:
+					err.textContent = 'This game only works in Chrome';
+					break;
+				case browser_version.BrowserChecker.StatusValues.CHROME_VERSION_TOO_OLD:
+					err.textContent = 'Chrome too old: You must use Chrome version '+minimumChromeVersion+' or later';
+					break;
+				case browser_version.BrowserChecker.StatusValues.NACL_NOT_ENABLED:
+					err.textContent = 'Native Client is not enabled; please go to <b>chrome://plugins</b> and enable Native Client plugin';
+					break;
+				case browser_version.BrowserChecker.StatusValues.NOT_USING_SERVER:
+					err.textContent = 'file: URL detected, please use a web server to host NaCl applications';
+					break;
+				default:
+					err.textContent = 'Could not detect browser or NaCl support status';
+				}
+				return false;
+			}
+			function handleError(event) {
+				document.getElementById('game_err_msg').textContent = document.getElementById('game').lastError;
+				document.getElementById('progress_div').style.display = 'none';
+				document.getElementById('game_err_div').style.display = 'block';
+			}
+			function handleProgress(event) {
+				if(event.lengthComputable && event.total > 0) {
+					var loadPercent = event.loaded / event.total * 100.0;
+					if(loadPercent >= 100) {
+						document.getElementById('progress_div').style.display = 'none';
+						document.getElementById('game_div').style.width = '100%';
+						document.getElementById('game_div').style.height = '100%';
+					} else {
+						document.getElementById("progress_bar").width = ""+loadPercent+"%"
+					}
+				}
+			}
+		</script>
+	</head>
+	<body style="overflow:hidden; margin:0px; border:0px;">
+		<div id="progress_div">
+			<center>
+				<div style="border: 2px solid red; width:200px;">
+					<p>Loading game...</p>
+					<div id="progress_bar" style="height: 20px; width:0px; background-color:green"/>
+				</div>
+			</center>
+		</div>
+		<div id="game_err_div" style="display:none">
+			<h1>An error occurred loading the game:</h1>
+			<b id="game_err_msg">ERROR TEXT HERE</b>
+		</div>
+		<div id="game_div" style="width:0px; height:0px">
+		</div>
+		<script type="text/javascript">
+			if(!check_browser()) {
+				document.getElementById('progress_div').style.display = 'none';
+				document.getElementById('game_err_div').style.display = 'block';
+			} else {
+				var game_div = document.getElementById('game_div');
+				game_div.addEventListener('error',handleError,true);
+				game_div.addEventListener('load',handleProgress,true);
+				game_div.innerHTML = '<embed id="game" width="100%" height="100%" src="game.nmf" type="application/x-nacl" />';
+			}
+		</script>
+	</body>
+</html>
