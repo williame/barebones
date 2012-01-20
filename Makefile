@@ -91,19 +91,19 @@ ${TARGET}.mingw-32.exe: ${OBJ_MINGW_X_32_CPP} ${OBJ_MINGW_X_32_C}
 ${TARGET}.mingw-64.exe: ${OBJ_MINGW_X_64_CPP} ${OBJ_MINGW_X_64_C}
 	x86_64-w64-mingw32-g++ -m64 ${MINGW_CFLAGS} -o $@ -m32 $^ ${MINGW_LDFLAGS}
 
-run:	check_env ${TARGET}.${EXE_EXT}
+run:	check_env ${TARGET}${EXE_EXT}
 ifeq ($(shell uname),windows32)
 	rm -f bin/stderr.txt bin/stdout.txt
-	(cd bin && ${TARGET_BIN}.${EXE_EXT} && cat bin/stdout.txt) || (cat bin/stdout.txt bin/stderr.txt && exit 1)
+	(cd bin && ${TARGET_BIN}${EXE_EXT} && cat bin/stdout.txt) || (cat bin/stdout.txt bin/stderr.txt && exit 1)
 else
-	cd bin && ./${TARGET_BIN}.${EXE_EXT}
+	cd bin && ./${TARGET_BIN}${EXE_EXT}
 endif
 	
-debug:	check_env ${TARGET}.${EXE_EXT}
-	cd bin && gdb --args ./${TARGET_BIN}.${EXE_EXT}
+debug:	check_env ${TARGET}${EXE_EXT}
+	cd bin && gdb --args ./${TARGET_BIN}${EXE_EXT}
 	
-valgrind:	check_env ${TARGET}.${EXE_EXT}
-	cd bin && valgrind ./${TARGET_BIN}.${EXE_EXT}
+valgrind:	check_env ${TARGET}${EXE_EXT}
+	cd bin && valgrind ./${TARGET_BIN}${EXE_EXT}
 	
 ZIP_FILENAME:=bin/${TARGET_BIN}-${BUILD_TIMESTAMP}.zip
 
