@@ -66,7 +66,9 @@ void g3d_t::on_io(const std::string& name,bool ok,const std::string& bytes,intpt
 }
 
 g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
-	g3d(g), vn_data(NULL), t_data(NULL), i_data(NULL), vn_vbo(NULL), t_vbo(NULL), i_vbo(0), texture(0),
+	g3d(g),
+	vn_data(NULL), t_data(NULL), i_data(NULL), vn_vbo(NULL), t_vbo(NULL), i_vbo(0),
+	texture(0), program(0),
 	min(FLT_MAX/2,FLT_MAX/2,FLT_MAX/2), max(-FLT_MAX/2,-FLT_MAX/2,-FLT_MAX/2) {
 	if(ver==4) {
 		name = std::string(in.fixed_str<64>().c_str());
@@ -100,7 +102,6 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glGenBuffers(frame_count,vn_vbo);
 	glCheck();
 	for(uint32_t f=0; f<frame_count; f++) {
-		std::cerr << g3d.filename << ':' << name << " vn_vbo[" << f << '=' << vn_vbo[f] << std::endl;
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[f]);
 		glBufferData(GL_ARRAY_BUFFER,vertex_count*6*sizeof(GLfloat),vn_data+f*vertex_count*6,GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -119,7 +120,6 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glGenBuffers(tex_frame_count,t_vbo);
 	glCheck();
 	for(uint32_t f=0; f<tex_frame_count; f++) {
-		std::cerr << g3d.filename << ':' << name << " t_vbo[" << f << '=' << t_vbo[f] << std::endl;
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[f]);
 		glBufferData(GL_ARRAY_BUFFER,vertex_count*2*sizeof(GLfloat),t_data+f*vertex_count*2,GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -133,7 +133,6 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	}
 	glGenBuffers(1,&i_vbo);
 	glCheck();
-	std::cerr << g3d.filename << ':' << name << " i_vbo=" << i_vbo << std::endl;
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,index_count*sizeof(GLushort),i_data,GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
@@ -168,7 +167,9 @@ g3d_t::mesh_t::~mesh_t() {
 	delete[] vn_data;
 	delete[] t_data;
 	if(vn_vbo) glDeleteBuffers(frame_count,vn_vbo);
+	delete[] vn_vbo;
 	if(t_vbo) glDeleteBuffers(tex_frame_count,t_vbo);
+	delete[] t_vbo;
 	delete[] i_data;
 	if(i_vbo) glDeleteBuffers(1,&i_vbo);
 }
@@ -179,62 +180,42 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized (" << i_vbo << ',' << textures << ',' << texture << ')' << std::endl;
 		return;
 	}
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	time = std::min(std::max(time,0.0f),1.0f) * (float)frame_count;
 	const size_t frame_0 = (size_t)time % frame_count;
 	glUseProgram(program);
 	glCheck();
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniform4fv(uniform_colour,1,glm::value_ptr(const_cast<glm::vec4&>(colour)));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniform3fv(uniform_light_0,1,glm::value_ptr(const_cast<glm::vec3&>(light_0)));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniformMatrix4fv(uniform_mvp_matrix,1,false,glm::value_ptr(projection*modelview));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glUniformMatrix3fv(uniform_normal_matrix,1,false,glm::value_ptr(glm::inverse(glm::mat3(modelview))));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
 	const GLsizei stride = 6*sizeof(GLfloat);
 	glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_0]);	
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glVertexAttribPointer(attrib_normal_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
 	if(frame_count > 1) {
 		const size_t frame_1 = (frame_0+1) % frame_count;
 		const float lerp = fmod(time,1);
 		glUniform1f(uniform_lerp,lerp);
-		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_1]);	
-		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_vertex_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
-		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_normal_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
-		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glCheck();
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	if(textures && texture) {
 		const size_t tex_frame = (size_t)(std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count) % tex_frame_count;
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
-		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glEnableVertexAttribArray(attrib_tex);
-		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
-		std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 		glCheck();
 	} else
 		glDisableVertexAttribArray(attrib_tex);
 	graphics_assert(i_vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << ',' << i_vbo << ',' << !!glIsBuffer(i_vbo) << ',' << index_count << std::endl;
 	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,(void*)(0));
-	std::cerr << "drawing " << g3d.filename << ':' << name << ' ' << __LINE__ << std::endl;
 	glCheck();
-	std::cerr << "drew " << g3d.filename << ':' << name << std::endl;
 }
 
 void g3d_t::mesh_t::on_texture_loaded(const std::string& name,GLuint handle,intptr_t data) {
