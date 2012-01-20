@@ -170,7 +170,10 @@ g3d_t::mesh_t::~mesh_t() {
 
 
 void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
-	if(!i_vbo) return; // initialisation failed?
+	if(!i_vbo || (textures && !texture)) {
+		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized" << std::endl;
+		return;
+	}
 	time = std::min(std::max(time,0.0f),1.0f) * (float)frame_count;
 	const size_t frame_0 = (size_t)time % frame_count;
 	glUseProgram(program);
