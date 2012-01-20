@@ -70,13 +70,13 @@ OBJ = ${OBJ_CPP} ${OBJ_C}
 TARGET_BIN = game
 TARGET = bin/${TARGET_BIN}
 
-TARGETS = ${TARGET}.${EXE_EXT} ${TARGET}.x86-32.nexe ${TARGET}.x86-64.nexe # ${TARGET}.mingw-32.exe ${TARGET}.mingw-64.exe
+TARGETS = ${TARGET}${EXE_EXT} ${TARGET}.x86-32.nexe ${TARGET}.x86-64.nexe # ${TARGET}.mingw-32.exe ${TARGET}.mingw-64.exe
 
 .PHONY:	clean all check_env zip
 
 all:	check_env ${TARGETS}
 
-${TARGET}.${EXE_EXT}: ${OBJ_SDL_CPP} ${OBJ_SDL_C}
+${TARGET}${EXE_EXT}: ${OBJ_SDL_CPP} ${OBJ_SDL_C}
 	g++ ${CFLAGS} -o $@ $^ ${LDFLAGS} ${SDL_LDFLAGS}
 	
 ${TARGET}.x86-32.nexe: ${OBJ_NACL_32_CPP} ${OBJ_NACL_32_C}

@@ -17,10 +17,13 @@ public:
 	const std::string filename;
 	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour = glm::vec4(1,1,1,1));
 	void bounds(glm::vec3& min,glm::vec3& max);
+	bool is_ready() const;
 private:
-	void on_io(const std::string& name,bool ok,const std::string& bytes,intptr_t data);
-	enum { LOAD_G3D };
 	struct mesh_t;
+	friend struct mesh_t;
+	enum { LOAD_G3D };
+	void on_io(const std::string& name,bool ok,const std::string& bytes,intptr_t data);
+	void on_ready(mesh_t* mesh);
 	typedef std::vector<mesh_t*> meshes_t;
 	meshes_t meshes;
 	loaded_t* observer;

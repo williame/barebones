@@ -7,6 +7,7 @@ public:
 	mesh_t(g3d_t& g3d,binary_reader_t& in,char ver);
 	virtual ~mesh_t();
 	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour);
+	bool is_ready() const { return i_vbo && (!(textures&1) || texture); }
 	g3d_t& g3d;
 	std::string name;
 	uint32_t frame_count, vertex_count, index_count, textures, tex_frame_count;
@@ -61,8 +62,6 @@ void g3d_t::on_io(const std::string& name,bool ok,const std::string& bytes,intpt
 		meshes.clear();
 		ok = false;
 	}
-	if(observer)
-		observer->on_g3d_loaded(*this,ok,observer_data);
 }
 
 g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
@@ -161,6 +160,8 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glUniform1i(g3d.main.get_uniform_loc(program,"TEX_UNIT_0"),0);
 	glEnableVertexAttribArray(attrib_vertex_0);
 	glEnableVertexAttribArray(attrib_normal_0);
+	if(!(textures&1))
+		g3d.on_ready(this);
 }
 
 g3d_t::mesh_t::~mesh_t() {
@@ -176,7 +177,7 @@ g3d_t::mesh_t::~mesh_t() {
 
 
 void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
-	if(!i_vbo || (textures && !texture)) {
+	if(!i_vbo || ((textures&1) && !texture)) {
 		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized (" << i_vbo << ',' << textures << ',' << texture << ')' << std::endl;
 		return;
 	}
@@ -204,7 +205,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		glCheck();
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
-	if(textures && texture) {
+	if((textures&1) && texture) {
 		const size_t tex_frame = (size_t)(std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count) % tex_frame_count;
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
 		glEnableVertexAttribArray(attrib_tex);
@@ -223,6 +224,7 @@ void g3d_t::mesh_t::on_texture_loaded(const std::string& name,GLuint handle,intp
 		data_error(g3d.filename << ':' << this->name << " could not load " << name << ',' << data);
 	texture = handle;
 	std::cout << g3d.filename << ':' << this->name << " loaded " << name << ',' << handle << std::endl; 
+	g3d.on_ready(this);
 }
 
 void g3d_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
@@ -238,3 +240,16 @@ void g3d_t::bounds(glm::vec3& min,glm::vec3& max) {
 		max = glm::vec3(std::max(max.x,(*m)->max.x),std::max(max.y,(*m)->max.y),std::max(max.z,(*m)->max.z));
 	}
 }
+
+bool g3d_t::is_ready() const {
+	for(meshes_t::const_iterator m=meshes.begin(); m!=meshes.end(); m++)
+		if(!(*m)->is_ready())
+			return false;
+	return true;
+}
+
+void g3d_t::on_ready(mesh_t* mesh) {
+	if(is_ready() && observer)
+		observer->on_g3d_loaded(*this,true,observer_data);
+}
+
