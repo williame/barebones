@@ -100,6 +100,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glGenBuffers(frame_count,vn_vbo);
 	glCheck();
 	for(uint32_t f=0; f<frame_count; f++) {
+		std::cerr << g3d.filename << ':' << name << " vn_vbo[" << f << '=' << vn_vbo[f] << std::endl;
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[f]);
 		glBufferData(GL_ARRAY_BUFFER,vertex_count*6*sizeof(GLfloat),vn_data+f*vertex_count*6,GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -118,6 +119,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glGenBuffers(tex_frame_count,t_vbo);
 	glCheck();
 	for(uint32_t f=0; f<tex_frame_count; f++) {
+		std::cerr << g3d.filename << ':' << name << " t_vbo[" << f << '=' << t_vbo[f] << std::endl;
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[f]);
 		glBufferData(GL_ARRAY_BUFFER,vertex_count*2*sizeof(GLfloat),t_data+f*vertex_count*2,GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER,0);
