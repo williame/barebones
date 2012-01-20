@@ -174,21 +174,16 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized" << std::endl;
 		return;
 	}
+	std::cerr << "drawing " << g3d.filename << ':' << name << std::endl;
 	time = std::min(std::max(time,0.0f),1.0f) * (float)frame_count;
 	const size_t frame_0 = (size_t)time % frame_count;
 	glUseProgram(program);
-	glCheck();
 	glUniform4fv(uniform_colour,1,glm::value_ptr(const_cast<glm::vec4&>(colour)));
-	glCheck();
 	glUniform3fv(uniform_light_0,1,glm::value_ptr(const_cast<glm::vec3&>(light_0)));
-	glCheck();
 	glUniformMatrix4fv(uniform_mvp_matrix,1,false,glm::value_ptr(projection*modelview));
-	glCheck();
 	glUniformMatrix3fv(uniform_normal_matrix,1,false,glm::value_ptr(glm::inverse(glm::mat3(modelview))));
 	glCheck();
-	if(GLint err = glGetError())
-		std::cerr << err << ' ' << g3d.filename << ':' << name << " error setting normal matrix " << uniform_normal_matrix << " to " << glm::value_ptr(glm::inverse(glm::mat3(modelview))) << std::endl;
-	const size_t stride = 6*sizeof(GLfloat);
+	const GLsizei stride = 6*sizeof(GLfloat);
 	glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_0]);	
 	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
 	glVertexAttribPointer(attrib_normal_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
@@ -205,8 +200,8 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	glBindTexture(GL_TEXTURE_2D,texture);
 	if(textures && texture) {
 		const size_t tex_frame = (size_t)(std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count) % tex_frame_count;
-		glEnableVertexAttribArray(attrib_tex);
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
+		glEnableVertexAttribArray(attrib_tex);
 		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
 		glCheck();
 	} else
@@ -214,6 +209,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
 	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,0);
 	glCheck();
+	std::cerr << "drew " << g3d.filename << ':' << name << std::endl;
 }
 
 void g3d_t::mesh_t::on_texture_loaded(const std::string& name,GLuint handle,intptr_t data) {
