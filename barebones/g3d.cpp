@@ -102,6 +102,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glBindBuffer(GL_ARRAY_BUFFER,vnt_vbo);
 	glBufferData(GL_ARRAY_BUFFER,(data_size+texture_size)*sizeof(GLfloat),vnt_data,GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER,0);
+	glCheck();
 	index_data = new GLushort[index_count];
 	for(uint32_t i=0; i<index_count; i++) {
 		index_data[i] = in.uint32();
@@ -113,6 +114,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER,index_count*sizeof(GLushort),index_data,GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 	if(1 == frame_count) {
+	glCheck();
 		program = g3d.main.get_shared_program("g3d_single_frame");
 		graphics_assert(program && "g3d_single_frame"); // provided by game adaptation
 	} else {
@@ -132,6 +134,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	attrib_normal_0 = g3d.main.get_attribute_loc(program,"NORMAL_0",GL_FLOAT_VEC3);
 	attrib_tex = g3d.main.get_attribute_loc(program,"TEX_COORD_0",GL_FLOAT_VEC2);
 	glUseProgram(program);
+	glCheck();
 	glUniform1i(g3d.main.get_uniform_loc(program,"TEX_UNIT_0"),0);
 	glEnableVertexAttribArray(attrib_vertex_0);
 	glEnableVertexAttribArray(attrib_normal_0);
