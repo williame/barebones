@@ -1,0 +1,3 @@
+[submodule "external/ogl-math"]
+	path = external/ogl-math
+	url = git://ogl-math.git.sourceforge.net/gitroot/ogl-math/ogl-math

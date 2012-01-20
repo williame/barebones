@@ -1,0 +1,9 @@
+*~
+#*
+.*
+*.dep
+*.opp
+*.o
+/bin/game*.zip
+/bin/game.*
+/bin/std*.txt
