@@ -69,7 +69,7 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	g3d(g), vn_data(NULL), t_data(NULL), i_data(NULL), vn_vbo(NULL), t_vbo(NULL), i_vbo(0), texture(0),
 	min(FLT_MAX/2,FLT_MAX/2,FLT_MAX/2), max(-FLT_MAX/2,-FLT_MAX/2,-FLT_MAX/2) {
 	if(ver==4) {
-		name = in.fixed_str<64>();
+		name = std::string(in.fixed_str<64>().c_str());
 		frame_count = in.uint32(); if(!frame_count) data_error(g3d.filename << ':' << name << " has no frames");
 		vertex_count = in.uint32(); if(!vertex_count) data_error(g3d.filename << ':' << name << " has no vertices");
 		index_count = in.uint32(); if(!index_count) data_error(g3d.filename << ':' << name << " has no indices");
