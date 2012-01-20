@@ -181,7 +181,8 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	glUniformMatrix4fv(uniform_mvp_matrix,1,false,glm::value_ptr(projection*modelview));
 	glCheck();
 	glUniformMatrix3fv(uniform_normal_matrix,1,true,glm::value_ptr(glm::inverse(glm::mat3(modelview))));
-	glCheck();
+	if(GLint err = glGetError())
+		std::cerr << err << "error setting normal matrix " << uniform_normal_matrix << " to " << glm::value_ptr(glm::inverse(glm::mat3(modelview))) << std::endl;
 	const size_t stride = 6*sizeof(GLfloat);
 	glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_0]);	
 	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
