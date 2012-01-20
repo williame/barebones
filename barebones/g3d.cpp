@@ -9,9 +9,13 @@ public:
 	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour);
 	g3d_t& g3d;
 	uint32_t frame_count, vertex_count, index_count, textures, tex_frame_count;
-	GLfloat* vnt_data;
-	GLushort* index_data;
-	GLuint vnt_vbo, index_vbo, texture, program,
+	GLfloat* vn_data;
+	GLfloat* t_data;
+	GLushort* i_data;
+	GLuint* vn_vbo; // per frame
+	GLuint* t_vbo; // per tex_frame
+	GLuint i_vbo;
+	GLuint texture, program,
 		uniform_mvp_matrix, uniform_normal_matrix, uniform_light_0, uniform_colour,
 		attrib_vertex_0, attrib_normal_0,
 		attrib_vertex_1, attrib_normal_1, uniform_lerp,
@@ -61,7 +65,7 @@ void g3d_t::on_io(const std::string& name,bool ok,const std::string& bytes,intpt
 }
 
 g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
-	g3d(g), vnt_data(NULL), index_data(NULL), vnt_vbo(0), index_vbo(0), texture(0),
+	g3d(g), vn_data(NULL), t_data(NULL), i_data(NULL), vn_vbo(NULL), t_vbo(NULL), i_vbo(0), texture(0),
 	min(FLT_MAX/2,FLT_MAX/2,FLT_MAX/2), max(-FLT_MAX/2,-FLT_MAX/2,-FLT_MAX/2) {
 	if(ver==4) {
 		const std::string name = in.fixed_str<64>();
@@ -79,39 +83,53 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 			}
 		tex_frame_count = textures?1:0;
 	}
-	const size_t data_size = vertex_count*frame_count*6, texture_size = textures?tex_frame_count*vertex_count*2:0;
-	vnt_data = new GLfloat[data_size+texture_size];
+	const size_t vn_size = vertex_count*frame_count*6;
+	vn_data = new GLfloat[vn_size];
 	for(int pass=0; pass<2; pass++) //0==vertices,1==normals
 		for(uint32_t f=0; f<frame_count; f++)
 			for(uint32_t v=0; v<vertex_count; v++)
 				for(int j=0; j<3; j++) {
 					const size_t slot = f*vertex_count*6 + v*6 + pass*3 + j;
-					assert(slot < data_size);
-					vnt_data[slot] = in.float32();
-					min[j] = std::min(vnt_data[slot],min[j]);
-					max[j] = std::max(vnt_data[slot],max[j]);
+					assert(slot < vn_size);
+					vn_data[slot] = in.float32();
+					min[j] = std::min(vn_data[slot],min[j]);
+					max[j] = std::max(vn_data[slot],max[j]);
 				}
+	vn_vbo = new GLuint[frame_count];
+	glGenBuffers(frame_count,vn_vbo);
+	glCheck();
+	for(uint32_t f=0; f<frame_count; f++) {
+		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[f]);
+		glBufferData(GL_ARRAY_BUFFER,vertex_count*6*sizeof(GLfloat),vn_data+f*vertex_count*6,GL_STATIC_DRAW);
+		glCheck();
+	}
+	const size_t texture_size = textures?tex_frame_count*vertex_count*2:0;
+	t_data = new GLfloat[texture_size];
 	for(uint32_t f=0; f<tex_frame_count; f++)
 		for(uint32_t v=0; v<vertex_count; v++) {
 			size_t slot = f*vertex_count*2+v*2;
 			assert(slot < texture_size-1);
-			vnt_data[data_size+slot] = in.float32();
-			vnt_data[data_size+slot+1] = 1.-in.float32(); // invert Y
+			t_data[slot] = in.float32();
+			t_data[slot+1] = 1.-in.float32(); // invert Y
 		}
-	glGenBuffers(1,&vnt_vbo);
-	glBindBuffer(GL_ARRAY_BUFFER,vnt_vbo);
-	glBufferData(GL_ARRAY_BUFFER,(data_size+texture_size)*sizeof(GLfloat),vnt_data,GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER,0);
+	t_vbo = new GLuint[tex_frame_count];
+	glGenBuffers(tex_frame_count,t_vbo);
 	glCheck();
-	index_data = new GLushort[index_count];
-	for(uint32_t i=0; i<index_count; i++) {
-		index_data[i] = in.uint32();
-		if(index_data[i] >= vertex_count)
-			data_error(g3d.filename << " index out of bounds");
+	for(uint32_t f=0; f<tex_frame_count; f++) {
+		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[f]);
+		glBufferData(GL_ARRAY_BUFFER,vertex_count*2*sizeof(GLfloat),t_data+f*vertex_count*2,GL_STATIC_DRAW);
+		glCheck();
 	}
-	glGenBuffers(1,&index_vbo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,index_vbo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER,index_count*sizeof(GLushort),index_data,GL_STATIC_DRAW);
+	i_data = new GLushort[index_count];
+	for(uint32_t i=0; i<index_count; i++) {
+		i_data[i] = in.uint32();
+		if(i_data[i] >= vertex_count)
+		data_error("index[" << i << "]=" << i_data[i] << " out of bounds (" << vertex_count << ')');
+	}
+	glGenBuffers(1,&i_vbo);
+	glCheck();
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER,index_count*sizeof(GLushort),i_data,GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
 	glCheck();
 	if(1 == frame_count) {
@@ -140,42 +158,56 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glEnableVertexAttribArray(attrib_normal_0);
 }
 
+g3d_t::mesh_t::~mesh_t() {
+	delete[] vn_data;
+	delete[] t_data;
+	if(vn_vbo) glDeleteBuffers(frame_count,vn_vbo);
+	if(t_vbo) glDeleteBuffers(tex_frame_count,t_vbo);
+	delete[] i_data;
+	if(i_vbo) glDeleteBuffers(1,&i_vbo);
+}
+
+
 void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
+	if(!i_vbo) return; // initialisation failed?
 	time = std::min(std::max(time,0.0f),1.0f) * (float)frame_count;
-	const int frame_0 = time;
+	const size_t frame_0 = time;
+	assert(frame_0 < frame_count);
 	glUseProgram(program);
+	glCheck();
 	glUniform4fv(uniform_colour,1,glm::value_ptr(const_cast<glm::vec4&>(colour)));
 	glUniform3fv(uniform_light_0,1,glm::value_ptr(const_cast<glm::vec3&>(light_0)));
 	glUniformMatrix4fv(uniform_mvp_matrix,1,false,glm::value_ptr(projection*modelview));
 	glUniformMatrix3fv(uniform_normal_matrix,1,true,glm::value_ptr(glm::inverse(glm::mat3(modelview))));
-	glBindTexture(GL_TEXTURE_2D,texture);
-	glBindBuffer(GL_ARRAY_BUFFER,vnt_vbo);
-	const intptr_t stride = 6*sizeof(GLfloat);
-	const intptr_t start_0 = frame_0 * vertex_count * stride;
-	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(start_0));
-	glVertexAttribPointer(attrib_normal_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(start_0+3*sizeof(GLfloat)));
+	glCheck();
+	const size_t stride = 6*sizeof(GLfloat);
+	glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_0]);	
+	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
+	glVertexAttribPointer(attrib_normal_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
+	glCheck();
 	if(frame_count > 1) {
-		const int frame_1 = (frame_0+1) % frame_count;
+		const size_t frame_1 = (frame_0+1) % frame_count;
+		assert(frame_1 < frame_count);
 		const float lerp = fmod(time,1);
 		glUniform1f(uniform_lerp,lerp);
-		const intptr_t start_1 = frame_1 * vertex_count * stride;
-		glVertexAttribPointer(attrib_vertex_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(start_1));
-		glVertexAttribPointer(attrib_normal_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(start_1+3*sizeof(GLfloat)));
+		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_1]);	
+		glVertexAttribPointer(attrib_vertex_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
+		glVertexAttribPointer(attrib_normal_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
+		glCheck();
 	}
+	glBindTexture(GL_TEXTURE_2D,texture);
 	if(textures && texture) {
+		const size_t tex_frame = std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count;
+		assert(tex_frame < tex_frame_count);
 		glEnableVertexAttribArray(attrib_tex);
-		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(vertex_count*frame_count*stride));
+		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
+		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
+		glCheck();
 	} else
 		glDisableVertexAttribArray(attrib_tex);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,index_vbo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
 	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,0);
-}
-
-g3d_t::mesh_t::~mesh_t() {
-	delete[] vnt_data; 
-	if(vnt_vbo) glDeleteBuffers(1,&vnt_vbo);
-	delete[] index_data;
-	if(index_vbo) glDeleteBuffers(1,&index_vbo);
+	glCheck();
 }
 
 void g3d_t::mesh_t::on_texture_loaded(const std::string& name,GLuint handle,intptr_t data) {
