@@ -34,6 +34,8 @@ public:
 		this->width = width; this->height = height;
 		glViewport(0,0,width,height);
 	}
+	int w() const { return width; }
+	int h() const { return height; }
 	// graphics utils
 	GLuint create_program(const char* vertex,const char* fragment);
 	GLint get_uniform_loc(GLuint prog,const std::string& name,GLenum type=0,int size=1); 

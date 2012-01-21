@@ -694,7 +694,7 @@ int main(int argc,char** args) {
 	}
 	atexit(SDL_Quit);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER,1);
-	SDL_Surface* window = SDL_SetVideoMode(800,600,24,SDL_OPENGL);
+	SDL_Surface* window = SDL_SetVideoMode(800,600,24,SDL_OPENGL|SDL_VIDEORESIZE);
 	if(!window) {
 		fprintf(stderr,"Unable to create SDL window: %s\n",SDL_GetError());
 		return EXIT_FAILURE;
@@ -725,9 +725,18 @@ int main(int argc,char** args) {
 			try {
 				if(!platform.event(event)) {
 					static int last_ignored_event = -1;
-					if(event.type != last_ignored_event) {
-						last_ignored_event = event.type;
-						std::cerr << "event(" << (int)event.type << ") not handled" << std::endl;
+					switch(event.type) {
+					case SDL_VIDEORESIZE:
+						if(event.resize.w != main->w() || event.resize.h != main->h()) { 
+							window = SDL_SetVideoMode(event.resize.w,event.resize.h,window->format->BitsPerPixel,window->flags);
+							main->on_resize(event.resize.w,event.resize.h);
+						}
+						break;
+					default:
+						if(event.type != last_ignored_event) {
+							last_ignored_event = event.type;
+							std::cerr << "event(" << (int)event.type << ") not handled" << std::endl;
+						}
 					}
 				}
 			} catch(_discard_event& de) {}
