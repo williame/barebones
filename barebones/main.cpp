@@ -753,8 +753,6 @@ int main(int argc,char** args) {
 	main->on_resize(window->w,window->h);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	while(main->tick()) {
-		// handle callbacks
-		platform.tick();
 		// flush graphics
 		SDL_GL_SwapBuffers();
 		SDL_Flip(window);
