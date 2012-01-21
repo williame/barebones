@@ -51,7 +51,14 @@ namespace {
 			pimpl(p), name(n), callback(cb), data(d), ok(false), cancelled(false)
 	#ifdef __native_client__
 			, nc_url_loader(p.instance), nc_url_info(p.instance) {
-			nc_url_info.SetURL(pp::Var(name));
+			std::string url;
+			for(size_t i=0; i<name.size(); i++) {
+				if(name.at(i) == '#')
+					url += "%23";
+				else
+					url += name.at(i);
+			}
+			nc_url_info.SetURL(pp::Var(url));
 			if(PP_OK_COMPLETIONPENDING != nc_url_loader.Open(nc_url_info,pp::CompletionCallback(nc_url_open,this)))
 				nc_url_do_read(); //### this flow untested; chrome has always returned PP_OK_COMPLETIONPENDING in testing
 		}
