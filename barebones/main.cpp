@@ -671,7 +671,7 @@ static unsigned short map_sdl_key(const SDL_KeyboardEvent& event) {
 	short code = event.keysym.unicode;
 	if(!code) {
 		code = event.keysym.sym;
-		std::cout<<"(could not map key "<<code<<')'<<std::endl;
+		//std::cout<<"(could not map key "<<code<<')'<<std::endl;
 	}
 	return code;
 }
