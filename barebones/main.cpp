@@ -33,7 +33,7 @@ struct main_t::_pimpl_t {
 	main_t& main;
 	typedef std::vector<callback_t*> callbacks_t;
 	callbacks_t callbacks;
-	void tick();
+	bool tick();
 	typedef std::vector<_file_io_impl_t*> file_io_impls_t;
 	file_io_impls_t file_io_impls;
 	typedef std::map<std::string,_texture_t*> textures_t;
@@ -229,7 +229,7 @@ namespace {
 	}
 #endif
 
-void main_t::_pimpl_t::tick() {
+bool main_t::_pimpl_t::tick() {
 	main._now = high_precision_time(); 
 	if(callbacks.size()) {
 		callbacks_t cb(callbacks); // from copy
@@ -237,7 +237,7 @@ void main_t::_pimpl_t::tick() {
 		for(callbacks_t::iterator i=cb.begin(); i!=cb.end(); i++)
 			(*i)->on_fire();
 	}
-	main.tick();
+	return main.tick();
 }
 
 main_t::main_t(void* platform_ptr): width(0), height(0), _pimpl(new _pimpl_t(*this,platform_ptr)) {
@@ -637,8 +637,8 @@ main_t::_pimpl_t::_pimpl_t(main_t& m,void*): main(m) {}
 
 struct _platform_main_t {
 	_platform_main_t(main_t& m): main(m) {}
-	void tick() {
-		main._pimpl->tick();
+	bool tick() {
+		return main._pimpl->tick();
 	}
 	bool event(const SDL_Event&);
 	main_t& main;
@@ -752,7 +752,7 @@ int main(int argc,char** args) {
 	_platform_main_t platform(*main.get());
 	main->on_resize(window->w,window->h);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-	while(main->tick()) {
+	while(platform.tick()) {
 		// flush graphics
 		SDL_GL_SwapBuffers();
 		SDL_Flip(window);
