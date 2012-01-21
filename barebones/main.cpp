@@ -57,7 +57,7 @@ namespace {
 		}
 	#else
 		{
-			if(FILE* file = fopen(name.c_str(),"r")) {
+			if(FILE* file = fopen(name.c_str(),"rb")) {
 				fseek(file,0,SEEK_END);
 				bytes.resize(ftell(file));
 				fseek(file,0,SEEK_SET);
