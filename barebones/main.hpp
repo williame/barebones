@@ -36,6 +36,7 @@ public:
 	}
 	int w() const { return width; }
 	int h() const { return height; }
+	uint64_t now() const { return _now; }
 	// graphics utils
 	GLuint create_program(const char* vertex,const char* fragment);
 	GLint get_uniform_loc(GLuint prog,const std::string& name,GLenum type=0,int size=1); 
@@ -104,11 +105,13 @@ public:
 	static main_t* create(void* platform_ptr,int argc,char** args);
 	static const char* const game_name;
 	struct _pimpl_t;
+	friend class _pimpl_t;
 protected:
 	main_t(void* platform_ptr);
 	int width, height;
 private:
 	_pimpl_t* _pimpl;
+	uint64_t _now;
 };
 
 class gl_exception_t: public std::exception {

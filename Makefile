@@ -1,12 +1,12 @@
 # flags for various build platform targets
 
 MINGW_CFLAGS = -DMINGW_X -I/opt/SDL-1.2.13/include/SDL
-MINGW_LDFLAGS = -L/opt/SDL-1.2.13/lib -lSDL -lopengl32 -Lbin-lglew32
+MINGW_LDFLAGS = -L/opt/SDL-1.2.13/lib -lSDL -lopengl32 -Lbin -lglew32
 
-ifeq ($(shell uname),windows32) # mingw
+ifeq ($(shell uname),MINGW32_NT-6.1) # mingw
 	EXE_EXT =.exe
-	SDL_CFLAGS =-I/usr/include/SDL `sdl-config --cflags`
-	SDL_LDFLAGS =-L/usr/lib -static -lglew32s `sdl-config --static-libs` ${MINGW_LDFLAGS}
+	SDL_CFLAGS =-I/usr/include `sdl-config --cflags`
+	SDL_LDFLAGS =-L/usr/lib `sdl-config --static-libs` -lopengl32 -lglew32
 else
 	EXE_EXT =
 	SDL_CFLAGS =`pkg-config --cflags sdl gl glew`
@@ -23,8 +23,8 @@ NACL_LDFLAGS = -lppapi -lppapi_cpp -lppapi_gles2
 CFLAGS = -g3 -Wall -O0 #-pedantic-errors -std=c++98 -Wno-long-long -fdiagnostics-show-option
 # -O9 -fomit-frame-pointer -march=native # etc -fprofile-generate/-fprofile-use
 
-DBUILD_TIMESTAMP = 
-CFLAGS += -DBUILD_TIMESTAMP=\"$(shell date +%y%m%d-%H%M%S)\" -DGIT_INFO=\"$(shell git symbolic-ref -q HEAD)\"
+BUILD_TIMESTAMP = $(shell date +%y%m%d-%H%M%S)
+CFLAGS += -DBUILD_TIMESTAMP=\"$(BUILD_TIMESTAMP)\" -DGIT_INFO=\"$(shell git symbolic-ref -q HEAD)\"
 
 # c++ object files
 	
@@ -74,11 +74,9 @@ TARGETS = ${TARGET}${EXE_EXT} ${TARGET}.x86-32.nexe ${TARGET}.x86-64.nexe # ${TA
 
 .PHONY:	clean all check_env zip
 
-all:	check_env ${TARGETS}
-
 ${TARGET}${EXE_EXT}: ${OBJ_SDL_CPP} ${OBJ_SDL_C}
 	g++ ${CFLAGS} -o $@ $^ ${LDFLAGS} ${SDL_LDFLAGS}
-	
+
 ${TARGET}.x86-32.nexe: ${OBJ_NACL_32_CPP} ${OBJ_NACL_32_C}
 	${NACL_PATH_32}i686-nacl-g++ ${CFLAGS} -o $@ -m32 $^ ${LDFLAGS} ${NACL_LDFLAGS}
 
@@ -90,6 +88,8 @@ ${TARGET}.mingw-32.exe: ${OBJ_MINGW_X_32_CPP} ${OBJ_MINGW_X_32_C}
 
 ${TARGET}.mingw-64.exe: ${OBJ_MINGW_X_64_CPP} ${OBJ_MINGW_X_64_C}
 	x86_64-w64-mingw32-g++ -m64 ${MINGW_CFLAGS} -o $@ -m32 $^ ${MINGW_LDFLAGS}
+
+all:	check_env ${TARGETS}
 
 run:	check_env ${TARGET}${EXE_EXT}
 ifeq ($(shell uname),windows32)
@@ -105,10 +105,11 @@ debug:	check_env ${TARGET}${EXE_EXT}
 valgrind:	check_env ${TARGET}${EXE_EXT}
 	cd bin && valgrind ./${TARGET_BIN}${EXE_EXT}
 	
-ZIP_FILENAME:=bin/${TARGET_BIN}-${BUILD_TIMESTAMP}.zip
+ZIP_FMT:=tar.gz
+ZIP_FILENAME:=bin/${TARGET_BIN}-${BUILD_TIMESTAMP}.${ZIP_FMT}
 
 zip:
-	git archive ${ZIP_FILENAME}
+	git archive --format ${ZIP_FMT} ${ZIP_FILENAME} HEAD
 
 # compile c files
 	
@@ -155,7 +156,7 @@ clean:
 DUMMY := $(shell rm -f build_info.*.opp) # we want these always built and I'm tired of trying to get .PHONY to work nicely
 
 check_env:
-ifeq ($(shell uname),windows32)
+ifeq ($(shell uname),MINGW32_NT-6.1) # mingw
 	@echo "You are using windows; good luck!"
 else
 	@echo "You are using $(shell uname); we'll assume this is unix-like"

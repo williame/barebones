@@ -33,7 +33,7 @@ struct main_t::_pimpl_t {
 	main_t& main;
 	typedef std::vector<callback_t*> callbacks_t;
 	callbacks_t callbacks;
-	void callback();
+	void tick();
 	typedef std::vector<_file_io_impl_t*> file_io_impls_t;
 	file_io_impls_t file_io_impls;
 	typedef std::map<std::string,_texture_t*> textures_t;
@@ -188,13 +188,56 @@ namespace {
 	};
 } // anon namespace
 
-void main_t::_pimpl_t::callback() {
+#ifdef __WIN32
+	#include <windows.h>
+	static uint64_t high_precision_time() {
+		LARGE_INTEGER now;
+		QueryPerformanceCounter(&now);
+		static __int64 base;
+		static double freq;
+		static bool inited = false;
+		if(!inited) {
+			base = now.QuadPart; 
+			LARGE_INTEGER li;
+			QueryPerformanceFrequency(&li);
+			freq = (double)li.QuadPart/1000000000;
+			std::cout << "FREQ "<<li.QuadPart<<","<<freq<<std::endl;
+			inited = true;
+		}
+		std::cout<<"NOW "<<(now.QuadPart-base)<<","<<(now.QuadPart-base)/freq<<std::endl;
+		return (now.QuadPart-base)/freq;	
+	}
+#elif defined(__native_client__)
+	#include <sys/time.h>
+	static uint64_t high_precision_time() {
+		static uint64_t base = 0;
+		struct timeval tv;
+		gettimeofday(&tv,NULL);
+		if(!base)
+			base = tv.tv_sec;
+		return (tv.tv_sec-base)*1000000000+(tv.tv_usec*1000);
+	}
+#else	
+	#include <time.h>
+	static uint64_t high_precision_time() {
+		static uint64_t base = 0;
+		timespec ts;
+		clock_gettime(CLOCK_MONOTONIC,&ts);
+		if(!base)
+			base = ts.tv_sec;
+		return (ts.tv_sec-base)*1000000000+ts.tv_nsec;
+	}
+#endif
+
+void main_t::_pimpl_t::tick() {
+	main._now = high_precision_time(); 
 	if(callbacks.size()) {
 		callbacks_t cb(callbacks); // from copy
 		callbacks.clear();
 		for(callbacks_t::iterator i=cb.begin(); i!=cb.end(); i++)
 			(*i)->on_fire();
 	}
+	main.tick();
 }
 
 main_t::main_t(void* platform_ptr): width(0), height(0), _pimpl(new _pimpl_t(*this,platform_ptr)) {
@@ -550,8 +593,7 @@ void _platform_main_t::Loop() {
 	context.SwapBuffers(pp::CompletionCallback(Flushed,this));
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	try {
-		main->_pimpl->callback();
-		main->tick();
+		main->_pimpl->tick();
 	} catch(std::exception& e) {
 		std::cerr << "Error in Loop: " << e.what() << std::endl;
 	}
@@ -595,8 +637,8 @@ main_t::_pimpl_t::_pimpl_t(main_t& m,void*): main(m) {}
 
 struct _platform_main_t {
 	_platform_main_t(main_t& m): main(m) {}
-	void callback() {
-		main._pimpl->callback();
+	void tick() {
+		main._pimpl->tick();
 	}
 	bool event(const SDL_Event&);
 	main_t& main;
@@ -711,12 +753,12 @@ int main(int argc,char** args) {
 	main->on_resize(window->w,window->h);
 	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 	while(main->tick()) {
+		// handle callbacks
+		platform.tick();
 		// flush graphics
 		SDL_GL_SwapBuffers();
 		SDL_Flip(window);
 		glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-		// handle callbacks
-		platform.callback();
 		// handle events
 		SDL_Event event;
 		while(SDL_PollEvent(&event)) {
