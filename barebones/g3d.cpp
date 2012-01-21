@@ -223,7 +223,6 @@ void g3d_t::mesh_t::on_texture_loaded(const std::string& name,GLuint handle,intp
 	if(!handle || (data != LOAD_TEXTURE))
 		data_error(g3d.filename << ':' << this->name << " could not load " << name << ',' << data);
 	texture = handle;
-	std::cout << g3d.filename << ':' << this->name << " loaded " << name << ',' << handle << std::endl; 
 	g3d.on_ready(this);
 }
 
