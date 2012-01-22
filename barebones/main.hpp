@@ -37,6 +37,7 @@ public:
 	int w() const { return width; }
 	int h() const { return height; }
 	uint64_t now() const { return _now; }
+	double now_secs() const { return (double)_now / 1000000000; }
 	// graphics utils
 	GLuint create_program(const char* vertex,const char* fragment);
 	GLint get_uniform_loc(GLuint prog,const std::string& name,GLenum type=0,int size=1); 
