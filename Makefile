@@ -29,6 +29,7 @@ OBJ_BASE_CPP = \
 	game.opp \
 	barebones/xml.opp \
 	barebones/g3d.opp \
+	barebones/rand.opp \
 	barebones/build_info.opp \
 	barebones/main.opp
 
