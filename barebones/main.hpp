@@ -98,10 +98,12 @@ public:
 		MOUSE_DRAG = MOUSE_LAST
 	};
 	typedef std::bitset<MOUSE_LAST> input_mouse_map_t;
-	virtual bool on_key_down(short code,const input_key_map_t& map,const input_mouse_map_t& mouse) { return false; }
-	virtual bool on_key_up(short code,const input_key_map_t& map,const input_mouse_map_t& mouse) { return false; }
-	virtual bool on_mouse_down(int x,int y,mouse_button_t button,const input_key_map_t& map,const input_mouse_map_t& mouse) { return false; }
-	virtual bool on_mouse_up(int x,int y,mouse_button_t button,const input_key_map_t& map,const input_mouse_map_t& mouse) { return false; }
+	virtual bool on_key_down(short code) { return false; }
+	virtual bool on_key_up(short code) { return false; }
+	virtual bool on_mouse_down(int x,int y,mouse_button_t button) { return false; }
+	virtual bool on_mouse_up(int x,int y,mouse_button_t button) { return false; }
+	const input_key_map_t& keys() const;
+	const input_mouse_map_t& mouse() const;
 	// factory
 	static main_t* create(void* platform_ptr,int argc,char** args);
 	static const char* const game_name;

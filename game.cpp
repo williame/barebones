@@ -10,10 +10,10 @@ public:
 	void init();
 	bool tick();
 	// debug just print state
-	bool on_key_down(short code,const input_key_map_t& map,const input_mouse_map_t& mouse);
-	bool on_key_up(short code,const input_key_map_t& map,const input_mouse_map_t& mouse);
-	bool on_mouse_down(int x,int y,mouse_button_t button,const input_key_map_t& map,const input_mouse_map_t& mouse);
-	bool on_mouse_up(int x,int y,mouse_button_t button,const input_key_map_t& map,const input_mouse_map_t& mouse);
+	bool on_key_down(short code);
+	bool on_key_up(short code);
+	bool on_mouse_down(int x,int y,mouse_button_t button);
+	bool on_mouse_up(int x,int y,mouse_button_t button);
 };
 
 void main_game_t::init() {
@@ -40,26 +40,26 @@ static void print_debug_input_map(const main_t::input_key_map_t& map,const main_
 			std::cout << "mouse " << i << " down" << std::endl;
 }
 
-bool main_game_t::on_key_down(short code,const input_key_map_t& map,const input_mouse_map_t& mouse) {
+bool main_game_t::on_key_down(short code) {
 	std::cout << "KEY " << code << " DOWN" << std::endl;
-	print_debug_input_map(map,mouse);
+	print_debug_input_map(keys(),mouse());
 	return false;
 }
 
-bool main_game_t::on_key_up(short code,const input_key_map_t& map,const input_mouse_map_t& mouse) {
+bool main_game_t::on_key_up(short code) {
 	std::cout << "KEY " << code << " UP" << std::endl;
-	print_debug_input_map(map,mouse);
+	print_debug_input_map(keys(),mouse());
 	return false;
 }
 
-bool main_game_t::on_mouse_down(int x,int y,mouse_button_t button,const input_key_map_t& map,const input_mouse_map_t& mouse) {
+bool main_game_t::on_mouse_down(int x,int y,mouse_button_t button) {
 	std::cout << "MOUSE " << x << ',' << y << ',' << button << " DOWN" << std::endl;
-	print_debug_input_map(map,mouse);
+	print_debug_input_map(keys(),mouse());
 	return false;
 }
 
-bool main_game_t::on_mouse_up(int x,int y,mouse_button_t button,const input_key_map_t& map,const input_mouse_map_t& mouse) {
+bool main_game_t::on_mouse_up(int x,int y,mouse_button_t button) {
 	std::cout << "MOUSE " << x << ',' << y << ',' << button << " UP" << std::endl;
-	print_debug_input_map(map,mouse);
+	print_debug_input_map(keys(),mouse());
 	return false;
 }

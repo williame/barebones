@@ -40,6 +40,8 @@ struct main_t::_pimpl_t {
 	textures_t textures;
 	typedef std::map<std::string,GLuint> shared_programs_t;
 	shared_programs_t shared_programs;
+	input_key_map_t key_map;
+	input_mouse_map_t mouse_map;
 #ifdef __native_client__
 	pp::Instance* instance;
 #endif
@@ -266,6 +268,9 @@ main_t::~main_t() {
 	delete _pimpl;
 }
 
+const main_t::input_key_map_t& main_t::keys() const { return _pimpl->key_map; }
+const main_t::input_mouse_map_t& main_t::mouse() const { return _pimpl->mouse_map; }
+
 static void glsl_log(GLuint obj,const std::string& src) {
 	int len = 0;
 	char log[4096];
@@ -467,8 +472,6 @@ private:
 	bool has_focus;
 	int width, height;
 	pp::Graphics3D context;
-	main_t::input_key_map_t key_map;
-	main_t::input_mouse_map_t mouse_map;
 private:
 	void Loop();
 	static void Flushed(void* data,int32_t result);
@@ -561,33 +564,33 @@ bool _platform_main_t::HandleInputEvent(const pp::InputEvent& nacl_event) {
 	switch(nacl_event.GetType()) {
 	case PP_INPUTEVENT_TYPE_KEYDOWN: {
 		const uint32_t code = map_nacl_key(pp::KeyboardInputEvent(nacl_event).GetKeyCode());
-		if(code < key_map.size())
-			key_map[code] = true;
-		return main->on_key_down(code,key_map,mouse_map);
+		if(code < main->_pimpl->key_map.size())
+			main->_pimpl->key_map[code] = true;
+		return main->on_key_down(code);
 	} break;
 	case PP_INPUTEVENT_TYPE_KEYUP: {
 		const uint32_t code = map_nacl_key(pp::KeyboardInputEvent(nacl_event).GetKeyCode());
-		if(code < key_map.size())
-			key_map[code] = false;
-		return main->on_key_up(code,key_map,mouse_map);
+		if(code < main->_pimpl->key_map.size())
+			main->_pimpl->key_map[code] = false;
+		return main->on_key_up(code);
 	} break;
 	case PP_INPUTEVENT_TYPE_MOUSEMOVE:
 	case PP_INPUTEVENT_TYPE_MOUSEDOWN: {
 		// trivia: if a button is down, we get a repeat
 		const pp::MouseInputEvent mouse(nacl_event);
 		const main_t::mouse_button_t btn = map_nacl_mouse_button(mouse.GetButton());
-		if(btn < (int)mouse_map.size())
-			mouse_map[btn] = true;
-		else if(mouse_map.none())
+		if(btn < (int)main->_pimpl->mouse_map.size())
+			main->_pimpl->mouse_map[btn] = true;
+		else if(main->_pimpl->mouse_map.none())
 			return false;
-		return main->on_mouse_down(mouse.GetPosition().x(),mouse.GetPosition().y(),btn,key_map,mouse_map);
+		return main->on_mouse_down(mouse.GetPosition().x(),mouse.GetPosition().y(),btn);
 	}
 	case PP_INPUTEVENT_TYPE_MOUSEUP: {
 		const pp::MouseInputEvent mouse(nacl_event);
 		const main_t::mouse_button_t btn = map_nacl_mouse_button(mouse.GetButton());
-		if(btn < (int)mouse_map.size()) {
-			mouse_map[btn] = false;
-			return main->on_mouse_up(mouse.GetPosition().x(),mouse.GetPosition().y(),btn,key_map,mouse_map);
+		if(btn < (int)main->_pimpl->mouse_map.size()) {
+			main->_pimpl->mouse_map[btn] = false;
+			return main->on_mouse_up(mouse.GetPosition().x(),mouse.GetPosition().y(),btn);
 		}
 		return false;
 	}
@@ -649,8 +652,6 @@ struct _platform_main_t {
 	}
 	bool event(const SDL_Event&);
 	main_t& main;
-	main_t::input_key_map_t key_map;
-	main_t::input_mouse_map_t mouse_map;
 };
 
 static unsigned short map_sdl_key(const SDL_KeyboardEvent& event) {
@@ -702,32 +703,32 @@ bool _platform_main_t::event(const SDL_Event& sdl) {
 	switch(sdl.type) {
 	case SDL_KEYDOWN: {
 		const unsigned short code = map_sdl_key(sdl.key);
-		if(code < key_map.size())
-			key_map[code] = true;
-		return main.on_key_down(code,key_map,mouse_map);
+		if(code < main._pimpl->key_map.size())
+			main._pimpl->key_map[code] = true;
+		return main.on_key_down(code);
 	} break;
 	case SDL_KEYUP: {
 		const unsigned short code = map_sdl_key(sdl.key);
-		if(code < key_map.size())
-			key_map[code] = false;
-		return main.on_key_up(code,key_map,mouse_map);
+		if(code < main._pimpl->key_map.size())
+			main._pimpl->key_map[code] = false;
+		return main.on_key_up(code);
 	} break;
 	case SDL_MOUSEBUTTONDOWN: {
 		main_t::mouse_button_t button = map_sdl_mouse(sdl.button);
-		if(button < mouse_map.size())
-			mouse_map[button] = true;
-		return main.on_mouse_down(sdl.button.x,sdl.button.y,button,key_map,mouse_map);
+		if(button < main._pimpl->mouse_map.size())
+			main._pimpl->mouse_map[button] = true;
+		return main.on_mouse_down(sdl.button.x,sdl.button.y,button);
 	} break;
 	case SDL_MOUSEBUTTONUP: {
 		main_t::mouse_button_t button = map_sdl_mouse(sdl.button);
-		if(button < mouse_map.size())
-			mouse_map[button] = false;
-		return main.on_mouse_up(sdl.button.x,sdl.button.y,button,key_map,mouse_map);
+		if(button < main._pimpl->mouse_map.size())
+			main._pimpl->mouse_map[button] = false;
+		return main.on_mouse_up(sdl.button.x,sdl.button.y,button);
 	} break;
 	case SDL_MOUSEMOTION: {
 		if(!sdl.motion.state)
 			throw _discard_event();
-		return main.on_mouse_down(sdl.motion.x,sdl.motion.y,main_t::MOUSE_DRAG,key_map,mouse_map);
+		return main.on_mouse_down(sdl.motion.x,sdl.motion.y,main_t::MOUSE_DRAG);
 	} break;
 	default:
 		return false;
