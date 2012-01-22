@@ -38,7 +38,6 @@ float rand_t::randf() {
 			LARGE_INTEGER li;
 			QueryPerformanceFrequency(&li);
 			freq = (double)li.QuadPart/1000000000;
-			std::cout << "FREQ "<<li.QuadPart<<","<<freq<<std::endl;
 			inited = true;
 		}
 		return (now.QuadPart-base)/freq;	
