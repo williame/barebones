@@ -228,8 +228,10 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		glDisableVertexAttribArray(attrib_vertex_1);
 		glDisableVertexAttribArray(attrib_normal_1);
 	}
-	if((textures&1) & texture)
+	if((textures&1) & texture) {
 		glDisableVertexAttribArray(attrib_tex);
+		glBindTexture(GL_TEXTURE_2D,0);
+	}
 	glCheck();
 }
 
