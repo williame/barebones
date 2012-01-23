@@ -80,6 +80,7 @@
 				game_div.addEventListener('error',handleError,true);
 				game_div.addEventListener('load',handleProgress,true);
 				game_div.innerHTML = '<embed id="game" width="100%" height="100%" src="game.nmf" type="application/x-nacl" />';
+				document.getElementById('game').focus();
 			}
 		</script>
 	</body>
