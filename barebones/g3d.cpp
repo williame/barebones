@@ -206,6 +206,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		glEnableVertexAttribArray(attrib_vertex_1);
 		glVertexAttribPointer(attrib_normal_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
 		glEnableVertexAttribArray(attrib_normal_1);
+		glBindBuffer(GL_ARRAY_BUFFER,0);
 		glCheck();
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
@@ -214,6 +215,7 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
 		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
 		glEnableVertexAttribArray(attrib_tex);
+		glBindBuffer(GL_ARRAY_BUFFER,0);
 		glCheck();
 	}
 	graphics_assert(i_vbo);
