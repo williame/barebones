@@ -523,6 +523,7 @@ static main_t::mouse_button_t map_nacl_mouse_button(uint32_t button) {
 bool _platform_main_t::HandleInputEvent(const pp::InputEvent& nacl_event) {
 	switch(nacl_event.GetType()) {
 	case PP_INPUTEVENT_TYPE_KEYDOWN: {
+		std::cout << "KEY DOWN " << code << std::endl;
 		const uint32_t code = map_nacl_key(pp::KeyboardInputEvent(nacl_event).GetKeyCode());
 		if(code < main->_pimpl->key_map.size())
 			main->_pimpl->key_map[code] = true;
