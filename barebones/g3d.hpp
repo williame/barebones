@@ -15,7 +15,7 @@ public:
 	g3d_t(main_t& main,const std::string& filename,loaded_t* observer=NULL,intptr_t data=0);
 	main_t& main;
 	const std::string filename;
-	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour = glm::vec4(1,1,1,1));
+	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,bool cycles,const glm::vec4& colour = glm::vec4(1,1,1,1));
 	void bounds(glm::vec3& min,glm::vec3& max);
 	bool is_ready() const;
 private:

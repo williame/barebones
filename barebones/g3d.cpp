@@ -6,7 +6,7 @@ struct g3d_t::mesh_t: private main_t::texture_load_t {
 public:
 	mesh_t(g3d_t& g3d,binary_reader_t& in,char ver);
 	virtual ~mesh_t();
-	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour);
+	void draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,bool cycles,const glm::vec4& colour);
 	bool is_ready() const { return i_vbo && (!(textures&1) || texture); }
 	g3d_t& g3d;
 	std::string name;
@@ -145,8 +145,6 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 		uniform_lerp = g3d.main.get_uniform_loc(program,"LERP",GL_FLOAT);
 		attrib_vertex_1 = g3d.main.get_attribute_loc(program,"VERTEX_1",GL_FLOAT_VEC3);
 		attrib_normal_1 = g3d.main.get_attribute_loc(program,"NORMAL_1",GL_FLOAT_VEC3);
-		glEnableVertexAttribArray(attrib_vertex_1);
-		glEnableVertexAttribArray(attrib_normal_1);
 	}
 	uniform_mvp_matrix = g3d.main.get_uniform_loc(program,"MVP_MATRIX",GL_FLOAT_MAT4);
 	uniform_normal_matrix = g3d.main.get_uniform_loc(program,"NORMAL_MATRIX",GL_FLOAT_MAT3);
@@ -158,10 +156,9 @@ g3d_t::mesh_t::mesh_t(g3d_t& g,binary_reader_t& in,char ver):
 	glUseProgram(program);
 	glCheck();
 	glUniform1i(g3d.main.get_uniform_loc(program,"TEX_UNIT_0"),0);
-	glEnableVertexAttribArray(attrib_vertex_0);
-	glEnableVertexAttribArray(attrib_normal_0);
 	if(!(textures&1))
 		g3d.on_ready(this);
+	glUseProgram(0);
 }
 
 g3d_t::mesh_t::~mesh_t() {
@@ -175,12 +172,15 @@ g3d_t::mesh_t::~mesh_t() {
 	if(i_vbo) glDeleteBuffers(1,&i_vbo);
 }
 
-
-void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
+void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,bool cycles,const glm::vec4& colour) {
 	if(!i_vbo || ((textures&1) && !texture)) {
 		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it is not initialized (" << i_vbo << ',' << textures << ',' << texture << ')' << std::endl;
 		return;
+	} else if(!frame_count) {
+		std::cerr << "cannot draw " << g3d.filename << ':' << name << " because it has no frames!" << std::endl;
+		return;
 	}
+	const uint32_t frame_count = ((this->frame_count > 1) && !cycles)? this->frame_count-1: this->frame_count; 
 	time = std::min(std::max(time,0.0f),1.0f) * (float)frame_count;
 	const size_t frame_0 = (size_t)time % frame_count;
 	glUseProgram(program);
@@ -193,29 +193,41 @@ void g3d_t::mesh_t::draw(float time,const glm::mat4& projection,const glm::mat4&
 	const GLsizei stride = 6*sizeof(GLfloat);
 	glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_0]);	
 	glVertexAttribPointer(attrib_vertex_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
+	glEnableVertexAttribArray(attrib_vertex_0);
 	glVertexAttribPointer(attrib_normal_0,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
+	glEnableVertexAttribArray(attrib_normal_0);
 	glCheck();
 	if(frame_count > 1) {
-		const size_t frame_1 = (frame_0+1) % frame_count;
+		const size_t frame_1 = (frame_0+1) % this->frame_count;
 		const float lerp = fmod(time,1);
 		glUniform1f(uniform_lerp,lerp);
 		glBindBuffer(GL_ARRAY_BUFFER,vn_vbo[frame_1]);	
 		glVertexAttribPointer(attrib_vertex_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(0));
+		glEnableVertexAttribArray(attrib_vertex_1);
 		glVertexAttribPointer(attrib_normal_1,3,GL_FLOAT,GL_FALSE,stride,(void*)(3*sizeof(GLfloat)));
+		glEnableVertexAttribArray(attrib_normal_1);
 		glCheck();
 	}
 	glBindTexture(GL_TEXTURE_2D,texture);
 	if((textures&1) && texture) {
 		const size_t tex_frame = (size_t)(std::min(std::max(time,0.0f),1.0f) * (float)tex_frame_count) % tex_frame_count;
 		glBindBuffer(GL_ARRAY_BUFFER,t_vbo[tex_frame]);
-		glEnableVertexAttribArray(attrib_tex);
 		glVertexAttribPointer(attrib_tex,2,GL_FLOAT,GL_FALSE,2*sizeof(GLfloat),(void*)(0));
+		glEnableVertexAttribArray(attrib_tex);
 		glCheck();
-	} else
-		glDisableVertexAttribArray(attrib_tex);
+	}
 	graphics_assert(i_vbo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,i_vbo);
 	glDrawElements(GL_TRIANGLES,index_count,GL_UNSIGNED_SHORT,(void*)(0));
+	glCheck();
+	glDisableVertexAttribArray(attrib_vertex_0);
+	glDisableVertexAttribArray(attrib_normal_0);
+	if(frame_count > 1) {
+		glDisableVertexAttribArray(attrib_vertex_1);
+		glDisableVertexAttribArray(attrib_normal_1);
+	}
+	if((textures&1) & texture)
+		glDisableVertexAttribArray(attrib_tex);
 	glCheck();
 }
 
@@ -226,9 +238,9 @@ void g3d_t::mesh_t::on_texture_loaded(const std::string& name,GLuint handle,intp
 	g3d.on_ready(this);
 }
 
-void g3d_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,const glm::vec4& colour) {
+void g3d_t::draw(float time,const glm::mat4& projection,const glm::mat4& modelview,const glm::vec3& light_0,bool cycles,const glm::vec4& colour) {
 	for(meshes_t::iterator m=meshes.begin(); m!=meshes.end(); m++)
-		(*m)->draw(time,projection,modelview,light_0,colour);
+		(*m)->draw(time,projection,modelview,light_0,cycles,colour);
 }
 
 void g3d_t::bounds(glm::vec3& min,glm::vec3& max) {
